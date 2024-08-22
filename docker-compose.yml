@@ -1,0 +1,36 @@
+version: '3.1'
+services:
+  db:
+    image: mariadb
+    restart: always
+    ports:
+      - "3308:3306"
+    networks:
+      - mysqlnet
+    environment:
+      MYSQL_ROOT_USER: root
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: sample
+    volumes:
+      - ./mysql_init:/docker-entrypoint-initdb.d
+      - ./mysql_volume_data:/var/lib/mysql 
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8091:3000"
+      - "8092:3004"
+    networks:
+      - mysqlnet
+    depends_on:
+      db:
+        condition: service_started
+networks:
+  mysqlnet:
